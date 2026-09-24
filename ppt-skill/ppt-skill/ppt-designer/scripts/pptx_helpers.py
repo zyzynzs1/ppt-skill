@@ -30,6 +30,16 @@ WHITE    = RGBColor(0xFF, 0xFF, 0xFF)
 FONT = "微软雅黑"
 PAGE_W, PAGE_H = Inches(10), Inches(5.625)
 
+
+def _ea(run):
+    """给 run 设置东亚字体（微软雅黑），兼容各版本 python-pptx"""
+    rPr = run._r.get_or_add_rPr()
+    ea = rPr.find(qn('a:ea'))
+    if ea is None:
+        ea = rPr.makeelement(qn('a:ea'), {})
+        rPr.append(ea)
+    ea.set('typeface', FONT)
+
 # ---------- 基础 ----------
 def new_deck():
     prs = Presentation()
@@ -64,7 +74,7 @@ def text(slide, x, y, w, h, content, size=9, color=INK, bold=False,
         p.alignment = align
         run = p.add_run(); run.text = t
         f = run.font; f.size = Pt(s); f.bold = b; f.color.rgb = c; f.name = FONT
-        run._r.rPr.rFonts.set(qn('a:ea'), FONT)  # 中文字体
+        _ea(run)
     return tb
 
 def bullets(slide, x, y, w, h, items, size=9, color=INK, gap=4):
@@ -77,7 +87,7 @@ def bullets(slide, x, y, w, h, items, size=9, color=INK, gap=4):
         p.space_after = Pt(gap); p.line_spacing = 1.2
         run = p.add_run(); run.text = "• " + it
         f = run.font; f.size = Pt(size); f.color.rgb = color; f.name = FONT
-        run._r.rPr.rFonts.set(qn('a:ea'), FONT)
+        _ea(run)
     return tb
 
 # ---------- 页面骨架 ----------
@@ -129,9 +139,10 @@ def arrow(slide, x1, y1, x2, y2, color=PRIMARY, wpt=1.5):
     conn = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT,
                                       Inches(x1), Inches(y1), Inches(x2), Inches(y2))
     conn.line.color.rgb = color; conn.line.width = Pt(wpt)
-    conn.line._get_or_add_ln().append(
-        conn.line._get_or_add_ln()._new_tailEnd())
-    conn.line._get_or_add_ln().tailEnd.set('type', 'arrow')
+    ln = conn.line._get_or_add_ln()
+    tail = ln.makeelement(qn('a:tailEnd'), {})
+    tail.set('type', 'arrow')
+    ln.append(tail)
     return conn
 
 def flow_chain(slide, y, steps, x0=0.5, x1=9.5, h=1.0, badge_style="A"):
