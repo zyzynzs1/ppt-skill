@@ -199,3 +199,24 @@ if __name__ == "__main__":
     conclusion_bar(s, 4.6, "一句话收束本页观点，金色点睛，全稿每页至多一处。")
     prs.save("demo.pptx")
     print("demo.pptx 已生成")
+def text_budget(w, h, size=9):
+    """估算文本块可容纳的中文字符数：防文字出容器"""
+    cpl = max(1, int((w - 0.24) / (size * 0.0096)))   # 每行字数
+    lines = max(1, int((h - 0.45) / (size * 0.015)))  # 行数
+    return cpl * lines
+
+def deep_card(slide, x, y, w, h, title, en, body, size=9):
+    """v3 深度卡（含溢出防护）：超预算120%先降半号，超135%警告要求拆页"""
+    budget = text_budget(w, h, size)
+    if len(body) > budget * 1.2:
+        size = 8.5
+        budget = text_budget(w, h, size)
+    if len(body) > budget * 1.35:
+        print(f"[警告] 卡片超预算 {len(body)}/{budget}，应拆页或精简：{title}")
+    rect(slide, x, y, w, h, CARD, MSO_SHAPE.ROUNDED_RECTANGLE, line=LINE)
+    pad = 0.12
+    text(slide, x+pad, y+pad, w-2*pad, 0.24, title, 12, NAVY, True)
+    yy = y + pad + 0.28
+    if en:
+        text(slide, x+pad, yy, w-2*pad, 0.15, en, 7.5, STEEL); yy += 0.2
+    text(slide, x+pad, yy+0.04, w-2*pad, h-(yy-y)-pad, body, size, INK)
